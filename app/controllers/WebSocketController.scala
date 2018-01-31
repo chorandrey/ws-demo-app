@@ -4,12 +4,13 @@ import javax.inject._
 
 import akka.actor.ActorSystem
 import akka.stream.Materializer
-import controllers.actors.PingWebSocketActor
+import controllers.actors.{ApplicationActor, PingWebSocketActor}
 import play.api.mvc._
 import play.api.libs.streams.ActorFlow
+import services.ActorServices
 
 @Singleton
-class WebSocketController @Inject()(cc: ControllerComponents)(implicit system: ActorSystem, mat: Materializer) extends AbstractController(cc) {
+class WebSocketController @Inject()(cc: ControllerComponents, actorServices: ActorServices)(implicit system: ActorSystem, mat: Materializer) extends AbstractController(cc) {
 
   /**
    * Create an Action to render an HTML page with a welcome message.
@@ -21,6 +22,12 @@ class WebSocketController @Inject()(cc: ControllerComponents)(implicit system: A
   def ping: WebSocket = WebSocket.accept[String, String] { request =>
     ActorFlow.actorRef { out =>
       PingWebSocketActor.props(out)
+    }
+  }
+
+  def application: WebSocket = WebSocket.accept[String, String] { request =>
+    ActorFlow.actorRef { out =>
+      ApplicationActor.props(out, actorServices.authentication)
     }
   }
 

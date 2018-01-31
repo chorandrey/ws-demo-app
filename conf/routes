@@ -3,6 +3,7 @@
 # ~~~~
 
 GET    /ws/ping              controllers.WebSocketController.ping
+GET    /ws/application       controllers.WebSocketController.application
 
 # An example controller showing a sample home page
 GET     /                           controllers.HomeController.index

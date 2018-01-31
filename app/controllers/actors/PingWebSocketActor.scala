@@ -1,12 +1,12 @@
 package controllers.actors
 
 import akka.actor._
-import controllers.actors.entity.{PingRequest, PingResponse}
+import controllers.actors.entity.{PingRequest, PingResponse, WSError}
 import io.circe._
 import io.circe.parser._
 
 object PingWebSocketActor {
-  def props(out: ActorRef) = Props(new PingWebSocketActor(out))
+  def props(out: ActorRef) = Props(new ApplicationActor(out))
 }
 
 class PingWebSocketActor(out: ActorRef) extends Actor {
@@ -17,7 +17,7 @@ class PingWebSocketActor(out: ActorRef) extends Actor {
         case Left(err) => {
           val errStr = "parsing failure: " + err.getMessage()
           println(errStr)
-          out ! errStr
+          out ! new WSError(errStr)
         }
         case Right(json) => {
           json.as[PingRequest] match {
