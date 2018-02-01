@@ -20,7 +20,7 @@ class WebSocketController @Inject()(cc: ControllerComponents, actorServices: Act
 
   def application: WebSocket = WebSocket.accept[String, String] { request =>
     ActorFlow.actorRef { out =>
-      ApplicationActor.props(out, actorServices.authentication)
+      ApplicationActor.props(out, actorServices.authentication, actorServices.tableHolder)
     }
   }
 

@@ -14,17 +14,18 @@ const loginTemplate = {
 		password: null
 }
 
-var testFunctions = [testLoginInvalidObj, testLoginInvalidCredentials, testLoginValidUserCredentials, testLoginValidAdminCredentials];
-
 /*
 Test workflow:
 1) Send invalid object
 2) Check response for invalid object
 3) Send valid login object but with incorrect credentials
 4) Check response
-5) Send valid login object with correct credentials
+5) Send valid login object with correct credentials (type is "user")
 6) Check answer
+7) Send valid login object with correct credentials (type is "admin")
+8) Check answer
 */
+var testFunctions = [testLoginInvalidObj, testLoginInvalidCredentials, testLoginValidUserCredentials, testLoginValidAdminCredentials];
 
 function testLoginInvalidObj(webSocket, testSequence){
   var invObject = {
@@ -160,10 +161,6 @@ function testLoginValidAdminCredentials(webSocket, testSequence){
   });
 
 
-}
-
-function receiveResponse(data){
-  console.log("response for login packet: " + data);
 }
 
 // run next test
