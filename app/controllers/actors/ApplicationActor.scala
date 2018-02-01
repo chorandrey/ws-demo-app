@@ -5,6 +5,7 @@ import controllers.actors.entity._
 import io.circe._
 import io.circe.parser._
 
+
 object ApplicationActor{
   def props(out: ActorRef, authenticationActor: ActorRef) = Props(new ApplicationActor(out, authenticationActor))
 }
@@ -20,7 +21,7 @@ class ApplicationActor(out: ActorRef, authenticationActor: ActorRef) extends Act
       parse(msg) match {
         case Left(err) =>
           val errStr = "parsing failure: " + err.getMessage()
-          out ! new WSError(errStr)
+          out ! stringify(new WSError(errStr))
 
         case Right(json) => {
           // determine type of object
@@ -33,28 +34,25 @@ class ApplicationActor(out: ActorRef, authenticationActor: ActorRef) extends Act
 
   def unathenticated: Receive = {
     case msg: String => {
-      println("unauthenticated: try to auth")
       val loginReq = parse(msg).toOption.flatMap(_.as[LoginRequest].toOption)
-      loginReq.map(loginReq => {
-        println("login request recognized")
+      val authReq: Boolean = loginReq.exists(loginReq => {
         authenticationActor ! loginReq
-
         true
       })
+      if(! authReq) out ! stringify(new LoginResponseError())
     }
     case authResp: UserAuthentication => {
       this.authentication = Some(authResp)
-      println("auth: " + authResp)
-      out ! Encoder[LoginResponseSuccess].apply(new LoginResponseSuccess(authResp.accountType)).spaces2
+      out ! stringify(new LoginResponseSuccess(authResp.accountType))
       context.unbecome()
     }
-    case failure: UserAuthenticationFailure.type => {
-      out ! Encoder[LoginResponseError].apply(new LoginResponseError()).spaces2
-    }
-    case unknown@_ => println(s"Unknown message: ${unknown.getClass} $unknown")
+    case failure: LoginResponseError => out ! stringify(failure)
+    case unknown@_ => context.system.deadLetters ! unknown
   }
 
   override def postStop(): Unit = {
     // socket closed by client or timeout
   }
+
+  def stringify[T](entity: T)(implicit encoder: Encoder[T]): String = encoder.apply(entity).spaces2
 }

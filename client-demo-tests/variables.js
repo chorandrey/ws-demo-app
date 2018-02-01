@@ -3,3 +3,6 @@ exports.port = "9000"
 
 exports.pingEndPoint = "/ws/ping"
 exports.applicationEndPoint = "/ws/application"
+exports.getServer = function(){
+  return "http://" + exports.host + ":" + exports.port;
+}
