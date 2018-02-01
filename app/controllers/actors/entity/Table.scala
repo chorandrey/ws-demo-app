@@ -1,6 +1,6 @@
 package controllers.actors.entity
 
-import io.circe.{Decoder, Encoder, Json, JsonObject}
+import io.circe._
 
 case class Table(id: Int, name: String, participants: Int)
 object Table{
@@ -43,3 +43,54 @@ object TableList {
       )
     ))
 }
+
+class NotAuthorized
+object NotAuthorized{
+  implicit val encode: Encoder[NotAuthorized] = (obj) => Json.fromJsonObject(JsonObject.apply(("$type", Json.fromString("not_authorized"))))
+}
+
+case class AddTable(table: Table, afterId: Int)
+object AddTable{
+  implicit val decode: Decoder[AddTable] = (hCursor) => for{
+    tpe <- hCursor.downField("$type").as[String]
+    after <- hCursor.downField("after_id").as[Int]
+    table <- hCursor.downField("table").as[Table]
+  } yield AddTable(table, after)
+}
+
+case class UpdateTable(table: Table)
+object UpdateTable{
+  implicit val decode: Decoder[UpdateTable] = (hCursor) => for{
+    tpe <- hCursor.downField("$type").as[String]
+    table <- hCursor.downField("table").as[Table]
+  } yield UpdateTable(table)
+}
+
+case class RemoveTable(id: Int)
+object RemoveTable{
+  implicit val decode: Decoder[RemoveTable] = (hCursor) => for{
+    tpe <- hCursor.downField("$type").as[String]
+    id <- hCursor.downField("id").as[Int]
+  } yield RemoveTable(id)
+}
+
+class RemovalFailed(val id: Int)
+object RemovalFailed{
+  implicit val encode: Encoder[RemovalFailed] = (obj) => Json.fromFields(
+    List(
+      ("$type", Json.fromString("removal_failed")),
+      ("id", Json.fromInt(obj.id))
+    )
+  )
+}
+
+class UpdateFailed(val id: Int)
+object UpdateFailed{
+  implicit val encode: Encoder[UpdateFailed] = (obj) => Json.fromFields(
+    List(
+      ("$type", Json.fromString("update_failed")),
+      ("id", Json.fromInt(obj.id))
+    )
+  )
+}
+
