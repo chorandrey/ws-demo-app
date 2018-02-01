@@ -6,7 +6,7 @@ import io.circe._
 import io.circe.parser._
 
 object PingWebSocketActor {
-  def props(out: ActorRef) = Props(new ApplicationActor(out))
+  def props(out: ActorRef) = Props(new PingWebSocketActor(out))
 }
 
 class PingWebSocketActor(out: ActorRef) extends Actor {

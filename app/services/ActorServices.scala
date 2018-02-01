@@ -8,5 +8,5 @@ import controllers.actors.AuhtenticationActor
 
 @Singleton
 class ActorServices @Inject()(val system: ActorSystem) {
-  val authentication: ActorRef = system.actorOf(AuhtenticationActor.props(classOf[NameBasedUserAuthentication]))
+  val authentication: ActorRef = system.actorOf(AuhtenticationActor.props(new NameBasedUserAuthentication()))
 }

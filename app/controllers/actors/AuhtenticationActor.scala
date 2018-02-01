@@ -1,24 +1,21 @@
 package controllers.actors
 
 import akka.actor.{Actor, Props}
-import controllers.actors.entity.{LoginRequest, UserAuthenticationProvider}
+import controllers.actors.entity.{LoginRequest, UserAuthenticationFailure, UserAuthenticationProvider}
 
 import scala.reflect.ClassTag
 
 object AuhtenticationActor{
-  def props[Q](cl: Class[Q]) = Props(new AuhtenticationActor(cl.getClass))
+  def props(authenticator: UserAuthenticationProvider) = Props(new AuhtenticationActor(authenticator))
 }
 
-class AuhtenticationActor[T <: UserAuthenticationProvider](clazz: Class[T]) extends Actor{
-  val inst = clazz.newInstance()
-
-  //val authenticator: UserAuthenticationProvider = ??? //classOf[T].newInstance()
+class AuhtenticationActor(val authenticator: UserAuthenticationProvider) extends Actor{
 
   override def receive: Receive = {
-    case loginReq: LoginRequest => {
-      //sender() ! authenticator.authenticate(loginReq)
+    case loginReq: LoginRequest => authenticator.authenticate(loginReq) match {
+      case Left(failure) => sender() ! UserAuthenticationFailure
+      case Right(success) => sender() ! success
     }
     case unknown @ _ => context.system.deadLetters ! unknown
   }
-
 }

@@ -6,10 +6,10 @@ import io.circe._
 import io.circe.parser._
 
 object ApplicationActor{
-  def props(out: ActorRef, authenticationActor: ActorRef) = Props(new ApplicationActor(out))
+  def props(out: ActorRef, authenticationActor: ActorRef) = Props(new ApplicationActor(out, authenticationActor))
 }
 
-class ApplicationActor(out: ActorRef) extends Actor {
+class ApplicationActor(out: ActorRef, authenticationActor: ActorRef) extends Actor {
   var authentication: Option[UserAuthentication] = None
 
   context.become(unathenticated) //workflow for not-authenticated clients
@@ -37,13 +37,19 @@ class ApplicationActor(out: ActorRef) extends Actor {
       val loginReq = parse(msg).toOption.flatMap(_.as[LoginRequest].toOption)
       loginReq.map(loginReq => {
         println("login request recognized")
+        authenticationActor ! loginReq
 
-        ???
+        true
       })
     }
-    case authResp: Option[UserAuthentication] => {
-      authentication = authResp
-      if(authResp.isDefined) context.unbecome()
+    case authResp: UserAuthentication => {
+      this.authentication = Some(authResp)
+      println("auth: " + authResp)
+      out ! Encoder[LoginResponseSuccess].apply(new LoginResponseSuccess(authResp.accountType)).spaces2
+      context.unbecome()
+    }
+    case failure: UserAuthenticationFailure.type => {
+      out ! Encoder[LoginResponseError].apply(new LoginResponseError()).spaces2
     }
     case unknown@_ => println(s"Unknown message: ${unknown.getClass} $unknown")
   }

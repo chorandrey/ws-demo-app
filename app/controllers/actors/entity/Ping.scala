@@ -7,18 +7,16 @@ import sun.security.krb5.internal.SeqNumber
 case class PingRequest(seqNumber: Int){
   def resp = PingResponse(seqNumber + 1)
 }
-object PingRequest{
-  implicit val decodePing: Decoder[PingRequest] = new Decoder[PingRequest]{
-    override def apply(c: HCursor): Result[PingRequest] = {
-      val fields = for{
-        tpe <- c.downField("$type").as[String]
-        seq <- c.downField("seq").as[Int]
-      } yield PingRequest(seq)
-      fields.map(Right(_)).getOrElse(Left(DecodingFailure("Error decoding", null)))
-    }
-  }
 
+object PingRequest {
+  implicit val decodePing: Decoder[PingRequest] = new Decoder[PingRequest] {
+    override def apply(c: HCursor): Result[PingRequest] = for {
+      tpe <- c.downField("$type").as[String]
+      seq <- c.downField("seq").as[Int]
+    } yield PingRequest(seq)
+  }
 }
+
 case class PingResponse(seqNumber: Int)
 object PingResponse{
   implicit val encodePingResp: Encoder[PingResponse] = new Encoder[PingResponse] {
