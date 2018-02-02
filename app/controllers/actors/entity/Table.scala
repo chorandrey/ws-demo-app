@@ -13,10 +13,10 @@ object Table{
   )
 
   implicit val decodeTable: Decoder[Table] = (json) => for{
-    id <- json.downField("id").as[Int]
+    id <- json.downField("id").as[Option[Int]]
     name <- json.downField("name").as[String]
     participants <- json.downField("participants").as[Int]
-  } yield Table(id, name, participants)
+  } yield Table(id.getOrElse(-1), name, participants)
 }
 
 class SubscribeTables
