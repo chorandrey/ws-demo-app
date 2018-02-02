@@ -34,7 +34,6 @@ object UnsubscribeTables{
 }
 
 case class TableList(tables: List[Table])
-
 object TableList {
   implicit val encode: Encoder[TableList] = (table) => Json.fromJsonObject(
     JsonObject(
@@ -44,11 +43,13 @@ object TableList {
     ))
 }
 
+/** Server message to notify client that it has no permission to perform operation */
 class NotAuthorized
 object NotAuthorized{
   implicit val encode: Encoder[NotAuthorized] = (obj) => Json.fromJsonObject(JsonObject.apply(("$type", Json.fromString("not_authorized"))))
 }
 
+/** Client command */
 case class AddTable(table: Table, afterId: Int)
 object AddTable{
   implicit val decode: Decoder[AddTable] = (hCursor) => for{
@@ -58,6 +59,7 @@ object AddTable{
   } yield AddTable(table, after)
 }
 
+/** Client command */
 case class UpdateTable(table: Table)
 object UpdateTable{
   implicit val decode: Decoder[UpdateTable] = (hCursor) => for{
@@ -66,6 +68,7 @@ object UpdateTable{
   } yield UpdateTable(table)
 }
 
+/** Client command */
 case class RemoveTable(id: Int)
 object RemoveTable{
   implicit val decode: Decoder[RemoveTable] = (hCursor) => for{
@@ -74,6 +77,7 @@ object RemoveTable{
   } yield RemoveTable(id)
 }
 
+/** Server message to notify client about update*/
 class RemovalFailed(val id: Int)
 object RemovalFailed{
   implicit val encode: Encoder[RemovalFailed] = (obj) => Json.fromFields(
@@ -84,6 +88,7 @@ object RemovalFailed{
   )
 }
 
+/** Server message to notify client about update*/
 class UpdateFailed(val id: Int)
 object UpdateFailed{
   implicit val encode: Encoder[UpdateFailed] = (obj) => Json.fromFields(
@@ -94,3 +99,31 @@ object UpdateFailed{
   )
 }
 
+/** Server message to notify client about update*/
+case class UpdateTableAdded(table: Table, after_id: Int)
+object UpdateTableAdded{
+  val encode: Encoder[UpdateTableAdded] = (table) => Json.fromFields(List(
+      ("$type", Json.fromString("table_added")),
+      ("after_id", Json.fromInt(table.after_id)),
+      ("table", Encoder[Table].apply(table.table))
+    )
+  )
+}
+
+/** Server message to notify client about update*/
+case class UpdateTableRemoved(id: Int)
+object UpdateTableRemoved{
+  val encode: Encoder[UpdateTableRemoved] = (table) => Json.fromFields(List(
+    ("$type", Json.fromString("table_removed")),
+    ("id", Json.fromInt(table.id))
+  ))
+}
+
+/** Server message to notify client about update*/
+case class UpdateTableUpdated(table: Table)
+object UpdateTableUpdated{
+  val encode: Encoder[UpdateTableUpdated] = (table) => Json.fromFields(List(
+    ("$type", Json.fromString("table_updated")),
+    ("table", Encoder[Table].apply(table.table))
+  ))
+}

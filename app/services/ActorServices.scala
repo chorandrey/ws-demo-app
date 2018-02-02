@@ -4,7 +4,7 @@ import javax.inject.{Inject, Singleton}
 
 import akka.actor.{ActorRef, ActorSystem, Props}
 import controllers.actors.entity.NameBasedUserAuthentication
-import controllers.actors.AuhtenticationActor
+import controllers.actors.{AuhtenticationActor, TableHolderActor}
 
 @Singleton
 class ActorServices @Inject()(val system: ActorSystem) {

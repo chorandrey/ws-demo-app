@@ -1,7 +1,7 @@
-package services
+package controllers.actors
 
 import akka.actor.{Actor, ActorRef}
-import controllers.actors.entity.{SubscribeTables, Table, TableList, UnsubscribeTables}
+import controllers.actors.entity._
 import play.api.Logger
 
 class TableHolderActor extends Actor{
@@ -23,6 +23,15 @@ class TableHolderActor extends Actor{
       val ref = sender()
       subscribers = subscribers - ref
     }
+
+    //possible responses: table_added
+    case AddTable(table, afterId) =>
+
+    //possible responses: update_failed (if no such table with id), table_updated
+    case UpdateTable(table) =>
+
+    //possible responses: removal_failed (if no such table with id), table_removed
+    case RemoveTable =>
 
     case elem @ _ => context.system.deadLetters ! elem
   }
