@@ -2,6 +2,7 @@ package controllers.actors
 
 import akka.actor._
 import controllers.actors.entity._
+
 import io.circe._
 import io.circe.parser._
 import play.api.Logger
@@ -31,12 +32,23 @@ class ApplicationActor(out: ActorRef, authenticationActor: ActorRef, tablesActor
           val objectType = json.hcursor.downField("$type").as[String].toOption
           objectType.foreach({
             case "subscribe_tables" =>
-              println("subscribe_tables block")
               val subscribeTables = getObject[SubscribeTables](json)
               subscribeTables.foreach(tablesReq => tablesActor ! tablesReq)
             case "unsubscribe_tables" =>
               val unsubscribeTables = getObject[UnsubscribeTables](json)
               unsubscribeTables.foreach(elem => tablesActor ! elem)
+            case "add_table" if isAdmin =>
+              val addTable = getObject[AddTable](json)
+              addTable.foreach(elem => tablesActor ! elem)
+            case "add_table" => out ! new NotAuthorized
+            case "update_table" if isAdmin =>
+              val updateTable = getObject[AddTable](json)
+              updateTable.foreach(elem => tablesActor ! elem)
+            case "update_table" => out ! new NotAuthorized
+            case "remove_table" if isAdmin =>
+              val removeTable = getObject[AddTable](json)
+              removeTable.foreach(elem => tablesActor ! elem)
+            case "remove_table" => out ! new NotAuthorized
             case _ => {}
           })
         }
@@ -45,6 +57,12 @@ class ApplicationActor(out: ActorRef, authenticationActor: ActorRef, tablesActor
 
     case tableList: TableList => out ! stringify(tableList)
 
+    case removalFailed: RemovalFailed => out ! stringify(removalFailed)
+    case updateFailed: UpdateFailed => out ! stringify(updateFailed)
+
+    case updateTableAdded: UpdateTableAdded => out ! stringify(updateTableAdded)
+    case updateTableUpdated: UpdateTableUpdated => out ! stringify(updateTableUpdated)
+    case updateTableRemoved: UpdateTableRemoved => out ! stringify(updateTableRemoved)
   }
 
   def unathenticated: Receive = {
@@ -73,4 +91,6 @@ class ApplicationActor(out: ActorRef, authenticationActor: ActorRef, tablesActor
 
   def getObject[T](elem: Json)(implicit decoder: Decoder[T]): Option[T] = decoder.decodeJson(elem).toOption
   def stringify[T](entity: T)(implicit encoder: Encoder[T]): String = encoder.apply(entity).spaces2
+
+  def isAdmin: Boolean = this.authentication.exists(_.accountType == AccountType.admin)
 }

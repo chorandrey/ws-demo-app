@@ -102,7 +102,7 @@ object UpdateFailed{
 /** Server message to notify client about update*/
 case class UpdateTableAdded(table: Table, after_id: Int)
 object UpdateTableAdded{
-  val encode: Encoder[UpdateTableAdded] = (table) => Json.fromFields(List(
+  implicit val encode: Encoder[UpdateTableAdded] = (table) => Json.fromFields(List(
       ("$type", Json.fromString("table_added")),
       ("after_id", Json.fromInt(table.after_id)),
       ("table", Encoder[Table].apply(table.table))
@@ -113,7 +113,7 @@ object UpdateTableAdded{
 /** Server message to notify client about update*/
 case class UpdateTableRemoved(id: Int)
 object UpdateTableRemoved{
-  val encode: Encoder[UpdateTableRemoved] = (table) => Json.fromFields(List(
+  implicit val encode: Encoder[UpdateTableRemoved] = (table) => Json.fromFields(List(
     ("$type", Json.fromString("table_removed")),
     ("id", Json.fromInt(table.id))
   ))
@@ -122,7 +122,7 @@ object UpdateTableRemoved{
 /** Server message to notify client about update*/
 case class UpdateTableUpdated(table: Table)
 object UpdateTableUpdated{
-  val encode: Encoder[UpdateTableUpdated] = (table) => Json.fromFields(List(
+  implicit val encode: Encoder[UpdateTableUpdated] = (table) => Json.fromFields(List(
     ("$type", Json.fromString("table_updated")),
     ("table", Encoder[Table].apply(table.table))
   ))
