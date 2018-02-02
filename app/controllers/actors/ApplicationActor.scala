@@ -40,15 +40,15 @@ class ApplicationActor(out: ActorRef, authenticationActor: ActorRef, tablesActor
             case "add_table" if isAdmin =>
               val addTable = getObject[AddTable](json)
               addTable.foreach(elem => tablesActor ! elem)
-            case "add_table" => out ! new NotAuthorized
+            case "add_table" => out ! stringify(new NotAuthorized)
             case "update_table" if isAdmin =>
-              val updateTable = getObject[AddTable](json)
+              val updateTable = getObject[UpdateTable](json)
               updateTable.foreach(elem => tablesActor ! elem)
-            case "update_table" => out ! new NotAuthorized
+            case "update_table" => out ! stringify(new NotAuthorized)
             case "remove_table" if isAdmin =>
-              val removeTable = getObject[AddTable](json)
+              val removeTable = getObject[RemoveTable](json)
               removeTable.foreach(elem => tablesActor ! elem)
-            case "remove_table" => out ! new NotAuthorized
+            case "remove_table" => out ! stringify(new NotAuthorized)
             case _ => {}
           })
         }

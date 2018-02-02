@@ -14,13 +14,13 @@ class TableHolderActor extends Actor{
   import TableHolderActor.comparator
   var tables: ListBuffer[Table] = ListBuffer(
     Table(1, "table - James Bond", 7),
-    Table(2, "table - Mission Impossible", 4)
+    Table(2, "table - Mission Impossible", 4),
+    Table(3, "table - Assassin's creed", 2)
   )
   var subscribers: Set[ActorRef] = Set.empty
 
   override def receive: Receive = {
     case subscribe_tables: SubscribeTables => {
-      logger.debug("Table list received subscribe request")
       this.subscribers = subscribers + sender()
       sender() ! TableList(tables.toList)
     }
@@ -47,7 +47,9 @@ class TableHolderActor extends Actor{
       }
 
     //possible responses: update_failed (if no such table with id), table_updated
-    case UpdateTable(table) if !canUpdate(table) => sender() ! new UpdateFailed(table.id)
+    case UpdateTable(table) if !canUpdate(table) =>
+      logger.error("update table failed: " + table.toString)
+      sender() ! new UpdateFailed(table.id)
     case UpdateTable(table) =>
       val updateIndex = tables.indexWhere(elem => elem.id == table.id)
       (updateIndex: @switch) match {

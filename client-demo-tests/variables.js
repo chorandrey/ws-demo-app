@@ -6,3 +6,6 @@ exports.applicationEndPoint = "/ws/application"
 exports.getServer = function(){
   return "http://" + exports.host + ":" + exports.port;
 }
+
+exports.successString = "[SUCCESS] ";
+exports.errorString = "[ERROR] ";
