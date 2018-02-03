@@ -1,6 +1,6 @@
 package controllers.actors
 
-import akka.actor.{Actor, ActorRef}
+import akka.actor.{Actor, ActorRef, PoisonPill}
 import controllers.actors.entity._
 import play.api.Logger
 
@@ -27,7 +27,7 @@ class TableHolderActor extends Actor{
     case unsubscribe: UnsubscribeTables => {
       logger.info("Table list received unsubscribe request")
       val ref = sender()
-      subscribers = subscribers - ref
+      subscribers -= ref
     }
 
     //possible responses: table_added
@@ -40,10 +40,11 @@ class TableHolderActor extends Actor{
           val newIndex: Int = findIndexToPrepend(this.tables)
           val insertTable = table.copy(id = newIndex)
           this.tables.insert(newIndex, insertTable)
-          sender() ! UpdateTableAdded(table, afterId)
+          subscribers.foreach(subscriber => subscriber ! UpdateTableAdded(table, afterId))
         case _ =>
-          this.tables += table.copy(id = tables.max.id + 1)
-          sender() ! UpdateTableAdded(table, afterId)
+          val newTable = table.copy(id = tables.max.id + 1)
+          this.tables += newTable
+          subscribers.foreach(subscriber => subscriber ! UpdateTableAdded(newTable, afterId))
       }
 
     //possible responses: update_failed (if no such table with id), table_updated

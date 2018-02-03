@@ -6,7 +6,7 @@ Workflow algorithm:
 4) admin sends modify table request ->
         admin and user get response - update notification
 5) admin sends create table request
-        admin and user get response - update notification
+        admin and user get response - create table notification
 5) admin sends create table request for beginning
         admin and user get response - create table notification
 6) admin sends remove table request
@@ -235,12 +235,67 @@ function awaitAdminAndUser(triesCount, adminSocket, userSocket) {
   if (adminCompleted && userCompleted) {
     console.log(variables.successString + "user and client have got table updates");
     // call next function in chain
-    process.exit(0);
+
+    loginRequestTest(adminSocket, userSocket);
+    //process.exit(0); // <------------------------------
   } else if(triesCount == 0) {
     console.log(variables.errorString + "not all websocket clients got notification");
     process.exit(1);
   } else setTimeout(awaitAdminAndUser, awaitTimeDelay, triesCount - 1, adminSocket, userSocket);
 }
 
+// 5) admin sends create table request
+//        admin and user get response - create table notification
 
+const createTableSample = {
+  "$type" : "add_table",
+  "after_id" : 1,
+  "table" : {"name" : "table - Extreme Foo Fighters", "participants" : 4}
+};
 
+const createSampleResponse = {
+  "$type" : "table_added",
+  "after_id" : 1,
+  "table" : {"id" : 3, "name" : "table - Extreme Foo Fighters", "participants" : 4}
+};
+
+function checkTableResponse(objReceived){
+  var checkCompleted = true;
+  var table = objReceived.table;
+  if(objReceived.$type != "table_added") checkCompleted = false;
+  if(objReceived.after_id != 1) checkCompleted = false;
+  if(table.name != "table - Extreme Foo Fighters") checkCompleted = false;
+  if(table.participants != 4) checkCompleted = false;
+  return checkCompleted;
+}
+
+function loginRequestTest(adminSocket, userSocket) {
+  adminSocket.removeAllListeners(eventMessage);
+  userSocket.removeAllListeners(eventMessage);
+  adminCompleted = false;
+  userCompleted = false;
+
+  adminSocket.on(eventMessage, function message(data) {
+    var notification = JSON.parse(data);
+    if (checkTableResponse(notification)) adminCompleted = true;
+  });
+
+  userSocket.on(eventMessage, function message(data) {
+    var notification = JSON.parse(data);
+    if (checkTableResponse(notification)) userCompleted = true;
+  });
+
+  adminSocket.send(JSON.stringify(createTableSample));
+  setTimeout(awaitLoginRequestTest, awaitTimeDelay, 10, adminSocket, userSocket);
+}
+
+function awaitLoginRequestTest(triesCount, adminSocket, userSocket) {
+  if (adminCompleted && userCompleted) {
+    console.log(variables.successString + "user and client have got notification - new table create");
+    // call next function in chain
+    process.exit(0); // <------------------------------
+  } else if(triesCount == 0) {
+    console.log(variables.errorString + "not all websocket clients got new table notification");
+    process.exit(1);
+  } else setTimeout(awaitAdminAndUser, awaitTimeDelay, triesCount - 1, adminSocket, userSocket);
+}
