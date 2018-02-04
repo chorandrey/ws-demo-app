@@ -13,7 +13,6 @@ object ApplicationActor{
 
 class ApplicationActor(out: ActorRef, authenticationActor: ActorRef, tablesActor: ActorRef) extends Actor {
   val logger = Logger("play").logger
-  logger.info("Creating ApplicationActor for actor: " + out.toString)
   var authentication: Option[UserAuthentication] = None
 
   context.become(unathenticated) //workflow for not-authenticated clients

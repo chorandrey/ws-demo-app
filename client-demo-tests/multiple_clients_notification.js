@@ -61,10 +61,11 @@ const addTableTempl = {
 // <---- Test (1): user and admin are logging on to the server
 
 adminSocket.on("open", function(){
-  userSocket.on("open", function(){
+  loginUserAdmin(adminSocket, userSocket);
+  //userSocket.on("open", function(){
     // both sockets are opened
-    loginUserAdmin(adminSocket, userSocket);
-  })
+
+  //})
 })
 
 function loginUserAdmin(adminSocket, userSocket){
