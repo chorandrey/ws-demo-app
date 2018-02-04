@@ -48,6 +48,9 @@ class ApplicationActor(out: ActorRef, authenticationActor: ActorRef, tablesActor
               val removeTable = getObject[RemoveTable](json)
               removeTable.foreach(elem => tablesActor ! elem)
             case "remove_table" => out ! stringify(new NotAuthorized)
+            case "ping" =>
+              val pingRequest = getObject[PingRequest](json)
+              pingRequest.foreach(req => out ! stringify(req.resp))
             case elem @ _ => logger.warn("Unexpected message in actor: " + elem)
           })
         }
@@ -66,12 +69,30 @@ class ApplicationActor(out: ActorRef, authenticationActor: ActorRef, tablesActor
 
   def unathenticated: Receive = {
     case msg: String => {
-      val loginReq = parse(msg).toOption.flatMap(_.as[LoginRequest].toOption)
-      val authReq: Boolean = loginReq.exists(loginReq => {
-        authenticationActor ! loginReq
-        true
-      })
-      if(! authReq) out ! stringify(new LoginResponseError())
+      parse(msg) match {
+        case Left(err) =>
+          val errStr = "parsing failure: " + err.getMessage()
+          logger.error(errStr)
+          out ! stringify(new WSError(errStr))
+        case Right(json) =>
+          val reqType = json.hcursor.downField("$type").as[String].toOption
+          reqType match {
+            case Some("login") =>
+              val loginReq = getObject[LoginRequest](json)
+              loginReq match {
+                case Some(loginRequest) => authenticationActor ! loginRequest
+                case None => out ! stringify(new LoginResponseError())
+              }
+              authenticationActor ! loginReq
+            case Some("ping") =>
+              val pingRequest = getObject[PingRequest](json)
+              pingRequest match {
+                case Some(pingReq) => out ! stringify(pingReq.resp)
+                case None => out ! stringify(new WSError("Illegal ping request entity"))
+              }
+            case _ => out ! stringify(new LoginResponseError())
+          }
+      }
     }
     case authResp: UserAuthentication => {
       this.authentication = Some(authResp)
