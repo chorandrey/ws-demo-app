@@ -7,15 +7,15 @@ Workflow algorithm:
         admin and user get response - update notification
 5) admin sends create table request
         admin and user get response - create table notification
-5) admin sends create table request for beginning
+6) admin sends create table request for beginning
         admin and user get response - create table notification
-6) admin sends remove table request
+7) admin sends remove table request
         admin and user get response - remove table notification
-7) admin sends remove table request with non-existing id
-        admin gets error removal table
 8) admin sends remove table request with non-existing id
+        admin gets error removal table
+9) admin sends update table request with non-existing id
         admin gets error update table
-9) user sends unsubscribe from notifications
+10) user sends unsubscribe from notifications
         admin sends create table request
         user doesn't get create table request
 
@@ -111,6 +111,10 @@ function loginUserAdmin(adminSocket, userSocket){
 
 // <---- Test (2): user and admin subscribe to tables
 
+// @use_value
+var tableObjectId1;
+var tableObjectId2;
+
 function userAdminSubscribe(adminSocket, userSocket){
   adminSocket.removeAllListeners(eventMessage);
   userSocket.removeAllListeners(eventMessage);
@@ -126,7 +130,8 @@ function userAdminSubscribe(adminSocket, userSocket){
 
       if(userLoginSuccess){
         console.log(variables.successString + "user gets table list");
-
+        tableObjectId1 = tableList[0].id;
+        tableObjectId2 = tableList[1].id;
         testUserEditTableError(adminSocket, userSocket); // <--------------- call next test
       } else {
         console.log(variables.errorString + "user didn't get table list");
@@ -270,6 +275,9 @@ function checkTableResponse(objReceived){
   return checkCompleted;
 }
 
+// @use_value
+var recentlyCreatedTableId;
+
 function loginRequestTest(adminSocket, userSocket) {
   adminSocket.removeAllListeners(eventMessage);
   userSocket.removeAllListeners(eventMessage);
@@ -283,6 +291,7 @@ function loginRequestTest(adminSocket, userSocket) {
 
   userSocket.on(eventMessage, function message(data) {
     var notification = JSON.parse(data);
+    recentlyCreatedTableId = notification.table.id;
     if (checkTableResponse(notification)) userCompleted = true;
   });
 
@@ -294,9 +303,198 @@ function awaitLoginRequestTest(triesCount, adminSocket, userSocket) {
   if (adminCompleted && userCompleted) {
     console.log(variables.successString + "user and client have got notification - new table create");
     // call next function in chain
-    process.exit(0); // <------------------------------
+    deleteTableSampleTest(adminSocket, userSocket);
+    //process.exit(0); // <------------------------------
   } else if(triesCount == 0) {
     console.log(variables.errorString + "not all websocket clients got new table notification");
     process.exit(1);
   } else setTimeout(awaitAdminAndUser, awaitTimeDelay, triesCount - 1, adminSocket, userSocket);
+}
+
+//6) admin sends create table request for beginning
+//        admin and user get response - create table notification
+
+//TODO
+
+//7) admin sends remove table request
+//        admin and user get response - remove table notification
+
+const removeTableSample = {
+"$type": "remove_table",
+"id": -1
+};
+
+function removeTableResponse(objReceived){
+  var checkCompleted = true;
+  if(objReceived.$type != "table_removed") checkCompleted = false;
+  if(objReceived.id != recentlyCreatedTableId) checkCompleted = false;
+  return checkCompleted;
+}
+
+function deleteTableSampleTest(adminSocket, userSocket) {
+  adminSocket.removeAllListeners(eventMessage);
+  userSocket.removeAllListeners(eventMessage);
+  adminCompleted = false;
+  userCompleted = false;
+
+  adminSocket.on(eventMessage, function message(data) {
+    var notification = JSON.parse(data);
+    if (removeTableResponse(notification)) adminCompleted = true;
+  });
+
+  userSocket.on(eventMessage, function message(data) {
+    var notification = JSON.parse(data);
+    if (removeTableResponse(notification)) userCompleted = true;
+  });
+
+  var removeTableRequest = Object.assign({}, removeTableSample, { id: recentlyCreatedTableId});
+  adminSocket.send(JSON.stringify(removeTableRequest));
+  setTimeout(awaitRemoveRequestTest, awaitTimeDelay, 10, adminSocket, userSocket);
+}
+
+function awaitRemoveRequestTest(triesCount, adminSocket, userSocket) {
+  if (adminCompleted && userCompleted) {
+    console.log(variables.successString + "table remove test completed");
+    // call next function in chain
+    errorDeleteTableSampleTest(adminSocket, userSocket);
+    //process.exit(0); // <------------------------------
+  } else if(triesCount == 0) {
+    console.log(variables.errorString + "not all websocket clients got new table notification");
+    process.exit(1);
+  } else setTimeout(awaitAdminAndUser, awaitTimeDelay, triesCount - 1, adminSocket, userSocket);
+}
+
+//8) admin sends remove table request with non-existing id
+//        admin gets error removal table (but not client)
+
+function errorRemoveTableResponse(objReceived){
+  var checkCompleted = true;
+  if(objReceived.$type != "removal_failed") checkCompleted = false;
+  if(objReceived.id != recentlyCreatedTableId) checkCompleted = false;
+  return checkCompleted;
+}
+
+function errorDeleteTableSampleTest(adminSocket, userSocket) {
+  adminSocket.removeAllListeners(eventMessage);
+  userSocket.removeAllListeners(eventMessage);
+  adminCompleted = false;
+  userCompleted = false;
+
+  adminSocket.on(eventMessage, function message(data) {
+    var notification = JSON.parse(data);
+    if (errorRemoveTableResponse(notification)) adminCompleted = true;
+  });
+
+  userSocket.on(eventMessage, function message(data) {
+    var notification = JSON.parse(data);
+    console.log("\tUser socket: " + data);
+    if (errorRemoveTableResponse(notification)) userCompleted = true;
+  });
+
+  var removeTableRequest = Object.assign({}, removeTableSample, { id: recentlyCreatedTableId});
+  adminSocket.send(JSON.stringify(removeTableRequest));
+  setTimeout(awaitErrorDeleteTableSampleTest, awaitTimeDelay, 10, adminSocket, userSocket);
+}
+
+function awaitErrorDeleteTableSampleTest(triesCount, adminSocket, userSocket) {
+  if (adminCompleted && !userCompleted && triesCount == 0) {
+    console.log(variables.successString + "not-existing remove test completed");
+    // call next function in chain
+    errorUpdateTableTest(adminSocket, userSocket);
+    //process.exit(0); // <------------------------------
+  } else if(triesCount == 0) {
+    process.exit(1);
+  } else setTimeout(awaitErrorDeleteTableSampleTest, awaitTimeDelay, triesCount - 1, adminSocket, userSocket);
+}
+
+//9) admin sends update table request with non-existing id
+//        admin gets error update table (but not clients)
+
+const updateTableSampe = {
+"$type": "update_table",
+"table": {
+"id": -1,
+"name": "table - Foo Fighters",
+"participants": 4
+}
+};
+
+function errorUpdateTableResponse(objReceived){
+  var checkCompleted = true;
+  if(objReceived.$type != "update_failed") checkCompleted = false;
+  if(objReceived.id != recentlyCreatedTableId) checkCompleted = false;
+  return checkCompleted;
+}
+
+function errorUpdateTableTest(adminSocket, userSocket) {
+  adminSocket.removeAllListeners(eventMessage);
+  userSocket.removeAllListeners(eventMessage);
+  adminCompleted = false;
+  userCompleted = false;
+
+  adminSocket.on(eventMessage, function message(data) {
+    var notification = JSON.parse(data);
+    if (errorUpdateTableResponse(notification)) adminCompleted = true;
+  });
+
+  userSocket.on(eventMessage, function message(data) {
+    var notification = JSON.parse(data);
+    if (errorUpdateTableResponse(notification)) userCompleted = true;
+  });
+
+  var updateTableRequest = Object.assign({}, updateTableSampe, { table: {
+    id: recentlyCreatedTableId,
+    name: updateTableSampe.table.name,
+    participants: updateTableSampe.table.participants
+  }});
+  adminSocket.send(JSON.stringify(updateTableRequest));
+  setTimeout(awaitErrorUpdateTableTest, awaitTimeDelay, 10, adminSocket, userSocket);
+}
+
+function awaitErrorUpdateTableTest(triesCount, adminSocket, userSocket) {
+  if (adminCompleted && !userCompleted && triesCount == 0) {
+    console.log(variables.successString + "not-existing table update test completed");
+    // call next function in chain
+    unsubscribeTableTest(adminSocket, userSocket);
+    //process.exit(0); // <------------------------------
+  } else if(triesCount == 0) {
+    process.exit(1);
+  } else setTimeout(awaitErrorUpdateTableTest, awaitTimeDelay, triesCount - 1, adminSocket, userSocket);
+}
+
+//10) user sends unsubscribe from notifications
+//        admin sends create table request
+//        user doesn't get create table request
+
+const unsubscribeTemplate = { $type : "unsubscribe_tables" };
+
+function unsubscribeTableTest(adminSocket, userSocket) {
+  adminSocket.removeAllListeners(eventMessage);
+  userSocket.removeAllListeners(eventMessage);
+  adminCompleted = false;
+  userCompleted = false;
+
+  adminSocket.on(eventMessage, function message(data) {
+    // no response is expected
+    adminCompleted = true;
+  });
+
+  userSocket.on(eventMessage, function message(data) {
+  // no response is expected
+    userCompleted = true;
+  });
+
+  adminSocket.send(JSON.stringify(unsubscribeTemplate));
+  userSocket.send(JSON.stringify(unsubscribeTemplate));
+  setTimeout(awaitUnsubscribeTest, awaitTimeDelay, 10, adminSocket, userSocket);
+}
+
+function awaitUnsubscribeTest(triesCount, adminSocket, userSocket) {
+  if (!adminCompleted && !userCompleted && triesCount == 0) {
+    console.log(variables.successString + "unsubscribe test completed");
+    console.log("\n\n" + variables.successString + "all tests completed");
+    process.exit(0); // <------------------------------
+  } else if(triesCount == 0) {
+    process.exit(1);
+  } else setTimeout(awaitUnsubscribeTest, awaitTimeDelay, triesCount - 1, adminSocket, userSocket);
 }

@@ -1,6 +1,6 @@
 package controllers.actors.entity
 
-class NameBasedUserAuthentication extends UserAuthenticationProvider {
+class NameBasedUserAuthenticationProvider extends UserAuthenticationProvider {
   val userKey = "user"
   val adminKey = "admin"
 
