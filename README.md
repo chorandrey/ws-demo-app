@@ -1,8 +1,5 @@
-# play-scala-starter-example
-
-[<img src="https://img.shields.io/travis/playframework/play-scala-starter-example.svg"/>](https://travis-ci.org/playframework/play-scala-starter-example)
-
-This is a starter application that shows how Play works.  Please see the documentation at <https://www.playframework.com/documentation/latest/Home> for more details.
+# WebSockets demo application
+This is a starter application that shows how Play works with WebSockets.
 
 ## Running
 
@@ -14,44 +11,22 @@ sbt run
 
 And then go to <http://localhost:9000> to see the running web application.
 
-There are several demonstration files available in this template.
+If you run pre-packaged version of application, it will run on <http://0.0.0.0:9000>
 
 ## Controllers
 
 - HomeController.scala:
+  Simple response for request
+- WebSocketController.scala
+  Controller to work with websocket requests.
 
-  Shows how to handle simple HTTP requests.
+## Access websockets endpoints
 
-- AsyncController.scala:
+Path | Description
+---- | ------
+/ws/ping | For ping requests
+/ws/application | For API-defined requests + ping requests (duplicated just for case)
 
-  Shows how to do asynchronous programming when handling a request.
+## Tests
+There are some rough tests (I'm not an JavaScript expert, but I thought there is the most direct way to test application) written on JavaScript (NodeJS) to test appliation. They're located in "test-nodejs" folder (multiple_clients_notification.js, ping-test.js, subscribe-table-test.js).
 
-- CountController.scala:
-
-  Shows how to inject a component into a controller and use the component when
-  handling requests.
-
-## Components
-
-- Module.scala:
-
-  Shows how to use Guice to bind all the components needed by your application.
-
-- Counter.scala:
-
-  An example of a component that contains state, in this case a simple counter.
-
-- ApplicationTimer.scala:
-
-  An example of a component that starts when the application starts and stops
-  when the application stops.
-
-## Filters
-
-- Filters.scala:
-
-  Creates the list of HTTP filters used by your application.
-
-- ExampleFilter.scala
-
-  A simple filter that adds a header to every response.
